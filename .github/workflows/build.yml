@@ -33,12 +33,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Keep the same debug key between builds
-        uses: actions/cache@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: debug-keystore-v1
-
       - name: Install packages
         run: npm install
 
@@ -66,6 +60,9 @@ jobs:
       - name: Create Android project
         run: npx cap add android
 
+      - name: Add Firebase config
+        run: cp google-services.json android/app/google-services.json
+
       - name: Generate app icons and splash
         run: npx @capacitor/assets generate --android || echo "assets step skipped"
 
@@ -79,14 +76,22 @@ jobs:
       - name: Sync
         run: npx cap sync android
 
-      - name: Build APK
+      - name: Build release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleRelease
 
-      - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk singify.apk
+      - name: Sign APK with the permanent key
+        env:
+          PASS: ${{ secrets.KEYSTORE_PASSPHRASE }}
+        run: |
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in singify.keystore.enc -out $RUNNER_TEMP/singify.keystore -pass env:PASS
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          $BT/zipalign -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk $RUNNER_TEMP/aligned.apk
+          $BT/apksigner sign --ks $RUNNER_TEMP/singify.keystore --ks-key-alias singify --ks-pass env:PASS --key-pass env:PASS --out singify.apk $RUNNER_TEMP/aligned.apk
+          $BT/apksigner verify --print-certs singify.apk | grep -i "SHA-1 digest"
+          rm $RUNNER_TEMP/singify.keystore
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
