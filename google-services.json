@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "396476158527",
+    "firebase_url": "https://singify-e6614-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "singify-e6614",
+    "storage_bucket": "singify-e6614.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:396476158527:android:49271eac9fed43c8d65e8a",
+        "android_client_info": {
+          "package_name": "com.singify.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "396476158527-talchad4gqr3tsr8p9ms744b03jt71qs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.singify.app",
+            "certificate_hash": "806eda86ffd4148daa5c7ceb1bb74ee8eca49eff"
+          }
+        },
+        {
+          "client_id": "396476158527-4vskjomo3j72rqlbig5dr52lpvct0dli.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDF_BmypDjfE45M4k26qN7C4uNj7l1nOJk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "396476158527-4vskjomo3j72rqlbig5dr52lpvct0dli.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
