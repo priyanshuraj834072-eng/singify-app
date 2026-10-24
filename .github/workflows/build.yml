@@ -14,6 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get icons from site repo
+        uses: actions/checkout@v4
+        with:
+          repository: priyanshuraj834072-eng/signify
+          path: site
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -23,11 +29,42 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Keep the same debug key between builds
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: debug-keystore-v1
+
       - name: Install packages
         run: npm install
 
+      - name: Prepare icon files
+        run: |
+          pip install pillow
+          mkdir -p assets
+          python - <<'PY'
+          from PIL import Image
+          src = Image.open('site/icons/icon-maskable-512.png').convert('RGBA')
+          big = src.resize((1024, 1024), Image.LANCZOS)
+          for n in ('icon-only.png', 'icon-foreground.png', 'icon-background.png'):
+              big.save('assets/' + n)
+          PY
+
       - name: Create Android project
         run: npx cap add android
+
+      - name: Generate app icons
+        run: npx @capacitor/assets generate --android || echo "icon step skipped"
+
+      - name: Permissions and version
+        run: |
+          F=android/app/src/main/AndroidManifest.xml
+          sed -i 's#<application#<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />\n    <application#' $F
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
 
       - name: Sync
         run: npx cap sync android
