@@ -2,8 +2,12 @@
   "appId": "com.singify.app",
   "appName": "Singify",
   "webDir": "www",
+  "backgroundColor": "#0a0907",
   "server": {
     "url": "https://signify-pearl.vercel.app",
     "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false
   }
 }
