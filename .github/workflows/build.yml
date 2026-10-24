@@ -63,6 +63,15 @@ jobs:
       - name: Add Firebase config
         run: cp google-services.json android/app/google-services.json
 
+      - name: Enable Google Services plugin
+        run: |
+          grep -q "com.google.gms:google-services" android/build.gradle || sed -i "s#classpath 'com.android.tools.build:gradle#classpath 'com.google.gms:google-services:4.4.2'\n        classpath 'com.android.tools.build:gradle#" android/build.gradle
+          grep -q "com.google.gms.google-services" android/app/build.gradle || echo "apply plugin: 'com.google.gms.google-services'" >> android/app/build.gradle
+          echo "---- android/build.gradle ----"
+          cat android/build.gradle
+          echo "---- app/build.gradle (end) ----"
+          tail -n 15 android/app/build.gradle
+
       - name: Generate app icons and splash
         run: npx @capacitor/assets generate --android || echo "assets step skipped"
 
