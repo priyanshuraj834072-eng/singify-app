@@ -42,29 +42,39 @@ jobs:
       - name: Install packages
         run: npm install
 
-      - name: Prepare icon files
+      - name: Prepare icon and splash files
         run: |
           pip install pillow
           mkdir -p assets
           python - <<'PY'
-          from PIL import Image
+          from PIL import Image, ImageDraw
           src = Image.open('site/icons/icon-maskable-512.png').convert('RGBA')
           big = src.resize((1024, 1024), Image.LANCZOS)
           for n in ('icon-only.png', 'icon-foreground.png', 'icon-background.png'):
               big.save('assets/' + n)
+          D = 1300
+          logo = src.resize((D, D), Image.LANCZOS)
+          m = Image.new('L', (D * 4, D * 4), 0)
+          ImageDraw.Draw(m).ellipse((0, 0, D * 4 - 1, D * 4 - 1), fill=255)
+          m = m.resize((D, D), Image.LANCZOS)
+          bg = Image.new('RGBA', (2732, 2732), (10, 9, 7, 255))
+          bg.paste(logo, ((2732 - D) // 2, (2732 - D) // 2), m)
+          bg.convert('RGB').save('assets/splash.png')
+          bg.convert('RGB').save('assets/splash-dark.png')
           PY
 
       - name: Create Android project
         run: npx cap add android
 
-      - name: Generate app icons
-        run: npx @capacitor/assets generate --android || echo "icon step skipped"
+      - name: Generate app icons and splash
+        run: npx @capacitor/assets generate --android || echo "assets step skipped"
 
-      - name: Permissions and version
+      - name: Permissions, version and splash colour
         run: |
           F=android/app/src/main/AndroidManifest.xml
           sed -i 's#<application#<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />\n    <application#' $F
           sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i 's|<style name="AppTheme.NoActionBarLaunch"\([^>]*\)>|&\n        <item name="windowSplashScreenBackground">#0a0907</item>|' android/app/src/main/res/values/styles.xml
 
       - name: Sync
         run: npx cap sync android
