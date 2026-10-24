@@ -1,0 +1,9 @@
+{
+  "appId": "com.singify.app",
+  "appName": "Singify",
+  "webDir": "www",
+  "server": {
+    "url": "https://signify-pearl.vercel.app",
+    "cleartext": false
+  }
+}
