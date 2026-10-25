@@ -73,6 +73,78 @@ jobs:
           sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
           sed -i 's|<style name="AppTheme.NoActionBarLaunch"\([^>]*\)>|&\n        <item name="windowSplashScreenBackground">#0a0907</item>|' android/app/src/main/res/values/styles.xml
 
+      - name: Edge-to-edge bridge (status bar behind the app, opt-in from the site)
+        run: |
+          J=android/app/src/main/java/com/singify/app/MainActivity.java
+          test -f "$J" || { echo "MainActivity.java not found"; find android/app/src -name "MainActivity*"; exit 1; }
+          cat > "$J" <<'JAVA'
+          package com.singify.app;
+
+          import android.graphics.Color;
+          import android.os.Bundle;
+          import android.view.View;
+          import android.webkit.JavascriptInterface;
+          import androidx.core.graphics.Insets;
+          import androidx.core.view.OnApplyWindowInsetsListener;
+          import androidx.core.view.ViewCompat;
+          import androidx.core.view.WindowCompat;
+          import androidx.core.view.WindowInsetsCompat;
+          import androidx.core.view.WindowInsetsControllerCompat;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+            private int statusPx = 0;
+
+            @Override
+            public void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+              int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
+              if (id > 0) statusPx = getResources().getDimensionPixelSize(id);
+              getBridge().getWebView().addJavascriptInterface(new EdgeBridge(), "SGEdge");
+            }
+
+            public class EdgeBridge {
+              @JavascriptInterface
+              public float top() {
+                return statusPx / getResources().getDisplayMetrics().density;
+              }
+
+              @JavascriptInterface
+              public void enable(final boolean on) {
+                runOnUiThread(new Runnable() {
+                  public void run() {
+                    setEdge(on);
+                  }
+                });
+              }
+            }
+
+            private void setEdge(boolean on) {
+              final View content = findViewById(android.R.id.content);
+              WindowCompat.setDecorFitsSystemWindows(getWindow(), !on);
+              if (on) {
+                getWindow().setStatusBarColor(Color.TRANSPARENT);
+                WindowInsetsControllerCompat c = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+                c.setAppearanceLightStatusBars(false);
+                ViewCompat.setOnApplyWindowInsetsListener(content, new OnApplyWindowInsetsListener() {
+                  @Override
+                  public WindowInsetsCompat onApplyWindowInsets(View v, WindowInsetsCompat insets) {
+                    Insets b = insets.getInsets(WindowInsetsCompat.Type.navigationBars() | WindowInsetsCompat.Type.ime());
+                    v.setPadding(0, 0, 0, b.bottom);
+                    return WindowInsetsCompat.CONSUMED;
+                  }
+                });
+                ViewCompat.requestApplyInsets(content);
+              } else {
+                ViewCompat.setOnApplyWindowInsetsListener(content, null);
+                content.setPadding(0, 0, 0, 0);
+              }
+            }
+          }
+          JAVA
+          echo "---- MainActivity.java ----"
+          head -20 "$J"
+
       - name: Include Google Sign-In library
         run: |
           grep -q "rgcfaIncludeGoogle" android/variables.gradle || sed -i 's/ext {/ext {\n    rgcfaIncludeGoogle = true/' android/variables.gradle
