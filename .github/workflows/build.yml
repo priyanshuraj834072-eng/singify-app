@@ -117,6 +117,27 @@ jobs:
                   }
                 });
               }
+
+              /* colour of the area under the app (behind the gesture / navigation bar) */
+              @JavascriptInterface
+              public void bar(final String hex, final boolean lightIcons) {
+                runOnUiThread(new Runnable() {
+                  public void run() {
+                    setBar(hex, lightIcons);
+                  }
+                });
+              }
+            }
+
+            private void setBar(String hex, boolean lightIcons) {
+              try {
+                int color = Color.parseColor(hex);
+                getWindow().getDecorView().setBackgroundColor(color);
+                getWindow().setNavigationBarColor(color);
+                WindowInsetsControllerCompat c = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+                c.setAppearanceLightNavigationBars(lightIcons);
+              } catch (Exception e) {
+              }
             }
 
             private void setEdge(boolean on) {
